@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const app = express();
 const auth = require('./api/auth/');
+const authorization = require('./middleware/authorization.js'); 
 
 app.use(volleyball);
 
@@ -22,6 +23,9 @@ app.get('/test', (req, res, next) =>{
     next(error);
 });
 
+app.get('/auth-test', authorization, (req, res, next) => {
+    res.json({message: 'Authroization Successful', user: req.user});
+});
 
 const notFound = (req, res, next) => {
     res.status(404);

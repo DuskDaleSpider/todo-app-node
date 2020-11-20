@@ -1,6 +1,7 @@
 const express = require('express');
 const joi = require('joi');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const db = require('../../db/connection.js');
 const users = db.get('users');
@@ -82,7 +83,19 @@ router.post('/signin', (req, res, next) => {
             }
             if(result){
                 //successful log in!
-                res.json({message: "Log in successful!"});
+                const token_payload = {
+                    _id: user._id,
+                    username: user.username
+                };
+                jwt.sign(token_payload, process.env.JWT_SECRET, {expiresIn: '1h'}, (err, token) => {
+                    if(err){
+                        console.log(err);
+                        const error = new Error("Something went wrong.");
+                        return next(error);
+                    }
+                    res.set('Authorization', `Bearer ${token}`);
+                    res.json({message: 'Log in Successful!'});
+                });
             }else{
                 const err = new Error("Username/Password is incorrect");
                 next(err);
