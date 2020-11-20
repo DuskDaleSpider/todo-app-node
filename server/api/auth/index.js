@@ -8,6 +8,20 @@ users.createIndex("username", {unique: true});
 
 const router = express.Router();
 
+const schema = joi.object({
+    username: joi.string()
+        .trim()
+        .pattern(/^\w+$/)
+        .min(4)
+        .max(20)
+        .required(),
+    password: joi.string()
+        .trim()
+        .min(7)
+        .max(255)
+        .required()
+});
+
 router.get('/', (req, res, next) => {
     res.json({
         message: "You've reached the auth!"
@@ -16,48 +30,65 @@ router.get('/', (req, res, next) => {
 
 router.post('/signup', (req, res, next) => {
     var body = req.body;
+
     //validate 
-    const schema = joi.object({
-        username: joi.string()
-            .trim()
-            .pattern(/^\w+$/)
-            .min(4)
-            .max(20)
-            .required(),
-        password: joi.string()
-            .trim()
-            .min(7)
-            .max(255)
-            .required()
-    });
-    
     var valResult = schema.validate(body);
     if(valResult.error){
-        next(valResult.error);
-    }else{
-        //successful validation
-        //
-        //
-        //check if username already exists
-        body = valResult.value;
-        users.findOne({username: body.username}).then(result => {
-            if(result != null){
-                const error = new Error('User already exists!'); 
-                next(error);
+        return next(valResult.error);
+    }
+    //successful validation
+    //
+    //
+    //check if username already exists
+    body = valResult.value;
+    users.findOne({username: body.username}).then(result => {
+        if(result != null){
+            const error = new Error('User already exists!'); 
+            return next(error);
+        }
+    });
+
+    //hash password and insert new user in db
+    bcrypt.hash(body.password, 10, (err, hash) =>{
+        users.insert({
+            username: body.username,
+            password: hash
+        }).then(result => {
+            res.json({username: result.username});
+        }).catch(err => { return next(err); });
+    });
+
+});
+
+router.post('/signin', (req, res, next) => {
+    var body = req.body;
+
+    var valResult = schema.validate(body);
+    if(valResult.error){
+        return next(valResult.error);
+    }
+    //successful validation
+    //retrieve user from database and compare bcrypt hash
+    body = valResult.value;
+    users.findOne({username: body.username}).then(user => {
+        if(user == null){
+            const username_err = new Error("Username/Password is incorrect");
+            return next(username_err);
+        }
+        bcrypt.compare(body.password, user.password, (err, result) => {
+            if(err){
+                const err = new Error("Username/Password is incorrect");
+                return next(err);
+            }
+            if(result){
+                //successful log in!
+                res.json({message: "Log in successful!"});
+            }else{
+                const err = new Error("Username/Password is incorrect");
+                next(err);
             }
         });
-
-        //hash password and insert new user in db
-        bcrypt.hash(body.password, 10, (err, hash) =>{
-            users.insert({
-                username: body.username,
-                password: hash
-            }).then(result => {
-                res.json({username: result.username});
-            }).catch(err => { next(err); });
-        });
-    }
-    
+    }); 
 });
 
 module.exports = router;
