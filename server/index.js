@@ -1,4 +1,6 @@
 const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const volleyball = require('volleyball');
 
 //bring in the .env
@@ -8,6 +10,11 @@ const app = express();
 const auth = require('./api/auth/');
 const authorization = require('./middleware/authorization.js'); 
 
+app.use(cors({
+    origin: 'http://localhost:8080',
+    credentials: true
+}));
+app.use(cookieParser(process.env.COOKIE_SECRET));
 app.use(volleyball);
 
 app.use(express.json());

@@ -55,7 +55,25 @@ router.post('/signup', (req, res, next) => {
             username: body.username,
             password: hash
         }).then(result => {
-            res.json({username: result.username});
+            //Generate JWT and set auth cookie
+            const payload = {
+                _id: result._id,
+                username: result.username
+            };
+            jwt.sign(payload, process.env.JWT_SECRET, {expiresIn: "1h"}, (err, tokenRes) => 
+            {
+                if(err){
+                   return next(err);
+                }
+                const cookieOptions = {
+                    httpOnly: true
+                }; 
+                res.cookie('Authorization', tokenRes, cookieOptions);
+                res.json({
+                    error: null,
+                    message: 'Sign up and log in successful'
+                });                
+            });
         }).catch(err => { return next(err); });
     });
 
@@ -93,8 +111,12 @@ router.post('/signin', (req, res, next) => {
                         const error = new Error("Something went wrong.");
                         return next(error);
                     }
-                    res.set('Authorization', `Bearer ${token}`);
-                    res.json({message: 'Log in Successful!'});
+                    //set auth cookie
+                    const cookieOptions = {
+                        httpOnly: true
+                    }; 
+                    res.cookie('Authorization', token, cookieOptions);                  
+                    res.json({error: null, message: 'Log in Successful!'});
                 });
             }else{
                 const err = new Error("Username/Password is incorrect");
@@ -102,6 +124,20 @@ router.post('/signin', (req, res, next) => {
             }
         });
     }); 
+});
+
+router.get('/cookieTest', (req, res, next) => {
+    const token = req.cookies.Authorization;
+    console.log(req.cookies);
+    if(typeof token === 'undefined' || token == null){
+        const err = new Error("No Token");
+        return next(err);
+    }
+
+    console.log(`Token: ${token}`);
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        res.json(decoded);
+    });
 });
 
 module.exports = router;

@@ -1,0 +1,30 @@
+PLAN:
+  -Use Vue and Vue Router
+    -Vue Router will basically make this a one page app
+    -Vue Router will show a given view
+  -Views:
+    -Sign Up
+        -Components:
+            -Sign up form
+    -Log in
+        -Components:
+            -log in form 
+    -Dashboard (Todos)
+        -Components:
+            -Todo List
+                -List of current todo's for user
+                -Components:
+                    -Todo
+                        -Display the todo with options for deleting/editing/etc
+            -Create Todo Form
+                -a "+" button on the bottom right to add a todo item
+  -App Components (global):
+    -Nav Bar
+        -Will contain the title & a log out button
+    -Router
+        -This is the main section that will display the different views
+
+TODO: 
+   -All of the above
+   -Research how to store JWT in a HTTP cookie (or better alternatives)
+
